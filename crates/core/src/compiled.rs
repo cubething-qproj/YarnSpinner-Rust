@@ -2,8 +2,9 @@ use core::{
     ops::{Deref, DerefMut},
     str::Utf8Error,
 };
-#[cfg(feature = "std")]
-use std::collections::HashMap;
+
+// Same as std
+use hashbrown::HashMap;
 
 use thiserror::Error;
 
@@ -11,11 +12,11 @@ use crate::prelude::*;
 
 /// A bundle of data for a yarn file as output from `ysc`. Useful for loading in
 /// precompiled assets.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CompiledFile {
     /// The [`Program`] associated with a single yarn file.
     pub program: Program,
-    /// Compiled [`YscLine`] data. Typically converted to [`Line`]s using [`YscLine::to_string_table`]
+    /// Compiled [`YscLine`] data, as read from a `*-Lines.csv` file.
     pub lines: YscLines,
     /// Compiled [`MetadataLine`]s for a yarn file.
     pub metadata: YscMetadata,
@@ -102,6 +103,11 @@ impl<const FIELD_COUNT: usize> Csv<FIELD_COUNT> {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy", derive(Reflect, Serialize, Deserialize))]
 pub struct YscLines(Vec<YscLine>);
+impl From<Vec<YscLine>> for YscLines {
+    fn from(lines: Vec<YscLine>) -> Self {
+        Self(lines)
+    }
+}
 impl DerefMut for YscLines {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
@@ -114,7 +120,7 @@ impl Deref for YscLines {
     }
 }
 impl YscLines {
-    /// Generates [Lines] from a CSV file, read in as bytes.
+    /// Generates [`YscLines`] from a CSV file, read in as bytes.
     pub fn from_bytes(input: &[u8]) -> core::result::Result<YscLines, CsvParseError> {
         let csv = Csv::<5>::from_bytes(input)?;
         let mut this = Self(vec![]);
@@ -135,15 +141,6 @@ impl YscLines {
             this.0.push(line);
         }
         Ok(this)
-    }
-
-    /// Converts this raw line data to something more useful for the runtime.
-    #[cfg(feature = "std")]
-    pub fn to_string_table(self) -> HashMap<LineId, String> {
-        self.0
-            .into_iter()
-            .map(|line| (line.id, line.text))
-            .collect()
     }
 }
 
@@ -182,6 +179,11 @@ pub struct MetadataLine {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy", derive(Reflect, Serialize, Deserialize))]
 pub struct YscMetadata(Vec<MetadataLine>);
+impl From<Vec<MetadataLine>> for YscMetadata {
+    fn from(lines: Vec<MetadataLine>) -> Self {
+        Self(lines)
+    }
+}
 impl core::ops::DerefMut for YscMetadata {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
@@ -196,7 +198,17 @@ impl core::ops::Deref for YscMetadata {
     }
 }
 impl YscMetadata {
-    /// Generates [Metadata] from a CSV file, read in as bytes.
+    /// Returns a map from each line's [`LineId`] to its tags.
+    ///
+    /// Lines without tags aren't in the metadata file, so they aren't in the map.
+    pub fn tags_by_id(&self) -> HashMap<&LineId, &[String]> {
+        self.0
+            .iter()
+            .map(|line| (&line.id, line.tags.as_slice()))
+            .collect()
+    }
+
+    /// Generates [`YscMetadata`] from a CSV file, read in as bytes.
     pub fn from_bytes(bytes: &[u8]) -> core::result::Result<Self, CsvParseError> {
         let csv = Csv::<4>::from_bytes(bytes)?;
         let mut this = Self(vec![]);

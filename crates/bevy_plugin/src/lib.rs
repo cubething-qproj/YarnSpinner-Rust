@@ -99,6 +99,7 @@
 
 mod assets;
 mod commands;
+mod compiled_file;
 mod development_file_generation;
 mod dialogue_runner;
 mod fmt_utils;
@@ -135,6 +136,7 @@ pub mod prelude {
     pub use crate::{
         assets::{yarn_file::YarnFile, yarnc::*},
         commands::{YarnCommand, YarnCommands},
+        compiled_file::CompiledFileExt,
         default_impl::FileExtensionAssetProvider,
         development_file_generation::DevelopmentFileGeneration,
         dialogue_runner::{DialogueOption, DialogueRunner, DialogueRunnerBuilder, LocalizedLine},
@@ -146,6 +148,7 @@ pub mod prelude {
     pub(crate) use crate::{localization::StringsFile, utils::*};
     pub(crate) use anyhow::Error;
     pub(crate) use serde::{Deserialize, Serialize};
+    pub use yarnspinner::core::{CompiledFile, MetadataLine, YscLine};
     pub(crate) use yarnspinner::prelude::*;
     pub use yarnspinner::prelude::{
         IntoYarnValueFromNonYarnValue, Language, LineId, MarkupAttribute, MarkupValue, OptionId,
