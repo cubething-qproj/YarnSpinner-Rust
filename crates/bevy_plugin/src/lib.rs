@@ -97,6 +97,7 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 #![warn(missing_docs, missing_debug_implementations)]
 
+mod assets;
 mod commands;
 mod development_file_generation;
 mod dialogue_runner;
@@ -106,7 +107,6 @@ mod localization;
 mod plugin;
 mod project;
 mod utils;
-mod yarn_file_asset;
 pub use anyhow::{Error, Result};
 
 pub mod default_impl {
@@ -133,6 +133,7 @@ pub mod prelude {
     #[cfg(feature = "audio_assets")]
     pub use crate::default_impl::AudioAssetProvider;
     pub use crate::{
+        assets::{yarn_file::YarnFile, yarnc::*},
         commands::{YarnCommand, YarnCommands},
         default_impl::FileExtensionAssetProvider,
         development_file_generation::DevelopmentFileGeneration,
@@ -141,7 +142,6 @@ pub mod prelude {
         localization::{Localization, Localizations},
         plugin::{YarnFileSource, YarnSpinnerPlugin, YarnSpinnerSystemSet},
         project::YarnProject,
-        yarn_file_asset::YarnFile,
     };
     pub(crate) use crate::{localization::StringsFile, utils::*};
     pub(crate) use anyhow::Error;
