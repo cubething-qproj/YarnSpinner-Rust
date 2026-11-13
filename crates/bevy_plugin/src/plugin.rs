@@ -252,12 +252,14 @@ pub(crate) fn watch_yarnproject_load(
     }
 
     let file = file_assets.get(source).unwrap();
+    info!("{file:#?}");
     let yarn_files = file
         .source_files()
         .iter()
         .cloned()
         .map(|path| YarnFileSource::File(path))
         .collect();
+    info!("{yarn_files:?}");
     let base_localization = Localization::with_language(&file.base_language);
     let translations = file
         .localisation

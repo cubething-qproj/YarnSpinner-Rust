@@ -134,7 +134,11 @@ pub mod prelude {
     #[cfg(feature = "audio_assets")]
     pub use crate::default_impl::AudioAssetProvider;
     pub use crate::{
-        assets::{yarn_file::YarnFile, yarnc::*},
+        assets::{
+            yarn_file::YarnFile,
+            yarnc::{YscLines, YscMetadata, YscProgram},
+            yarnproject::YarnProjectFile,
+        },
         commands::{YarnCommand, YarnCommands},
         compiled_file::CompiledFileExt,
         default_impl::FileExtensionAssetProvider,

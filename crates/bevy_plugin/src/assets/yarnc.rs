@@ -3,13 +3,7 @@ use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
     prelude::*,
 };
-use yarnspinner::compiler::Project;
 use yarnspinner::core::{YscLines as YscLinesInner, YscMetadata as YscMetadataInner};
-
-/// A .yarnproject file.
-#[derive(Debug, Clone, PartialEq, Reflect, Asset, Serialize, Deserialize, Deref, DerefMut)]
-#[reflect(Debug, PartialEq, Serialize, Deserialize)]
-pub struct YarnProjectFile(pub(crate) Project);
 
 /// A compiled Yarn file, `*.yarnc`.
 #[derive(Debug, Clone, PartialEq, Reflect, Asset, Serialize, Deserialize)]
@@ -57,13 +51,6 @@ macro_rules! add_loader {
 }
 
 add_loader!(
-    YarnProjectFileLoader,
-    YarnProjectFile,
-    Project,
-    ["yarnproject"],
-    "[AssetLoader] for a [Project]."
-);
-add_loader!(
     YscProgramLoader,
     YscProgram,
     YarnProgram,
@@ -97,7 +84,4 @@ pub(crate) fn yarnc_assets_plugin(app: &mut App) {
     app.init_asset::<YscMetadata>()
         .register_asset_reflect::<YscMetadata>()
         .init_asset_loader::<YscMetadataLoader>();
-    app.init_asset::<YarnProjectFile>()
-        .register_asset_reflect::<YarnProjectFile>()
-        .init_asset_loader::<YarnProjectFileLoader>();
 }

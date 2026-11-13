@@ -58,6 +58,7 @@ fn load_project(
     mut already_loaded: Local<bool>,
 ) -> SystemResult {
     for event in events.drain() {
+        info!("{:?}", event);
         if *already_loaded {
             bail!(
                 "Yarn project already loaded. Sending multiple LoadYarnProjectEvent is not allowed."

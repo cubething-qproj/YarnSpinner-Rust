@@ -237,10 +237,4 @@ impl Project {
         let exclude_matcher = self.build_exclude_globset();
         source_matcher.is_match(&full_path) && !exclude_matcher.is_match(&full_path)
     }
-
-    #[cfg(feature = "serde")]
-    /// Loads in a `Project` from bytes.
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, serde_json::Error> {
-        serde_json::from_slice(bytes)
-    }
 }
