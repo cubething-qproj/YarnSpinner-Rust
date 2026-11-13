@@ -8,13 +8,37 @@ pub use yarn_file_source::YarnFileSource;
 
 mod yarn_file_source;
 
-/// The plugin that provides all Yarn Spinner functionality.
-/// In general, you'll want to create this by searching for Yarn files in "assets/dialogue", which [`YarnSpinnerPlugin::new`] does under the hood.
-/// You can also provide a list of Yarn files to load via [`YarnSpinnerPlugin::with_yarn_sources`].
-/// If you however do not know the paths to any files nor have them in-memory at the start of the program,
-/// use [`YarnSpinnerPlugin::deferred`] instead to later load the files by sending a [`LoadYarnProjectEvent`].
+/// The plugin that provides all Yarn Spinner functionality. This is split into
+/// three APIs: [`ManualYarnSpinnerPlugin`], [`ProjectYarnSpinnerPlugin`], and
+/// [`DeferredYarnSpinnerPlugin`]. Each specifies their own manner of loading in
+/// `.yarn` files. See their documentation for more details.
+#[derive(Debug, Default)]
+pub struct YarnSpinnerPlugin;
+impl YarnSpinnerPlugin {
+    /// Use this API if you want to manually specify the project settings,
+    /// rather than using a `.yarnproject` file.
+    pub fn manual() -> ManualYarnSpinnerPlugin {
+        ManualYarnSpinnerPlugin::default()
+    }
+    /// Use this API when you do not know ahead of time where the yarn spinner
+    /// files will be. This plugin is always added. In order to load yarn files,
+    /// you must send the [`LoadYarnProjectEvent`]. The Manual and Project
+    /// plugin varieties are front-ends which will send these for you.
+    pub fn deferred() -> DeferredYarnSpinnerPlugin {
+        DeferredYarnSpinnerPlugin::default()
+    }
+}
+
+/// In general, you'll want to create this by searching for Yarn files in
+/// "assets/dialogue", which [`ManualYarnSpinnerPlugin::new`] does under the hood. You
+/// can also provide a list of Yarn files to load via
+/// [`ManualYarnSpinnerPlugin::with_yarn_sources`]. If you however do not know the
+/// paths to any files nor have them in-memory at the start of the program, use
+/// [`YarnSpinnerPlugin::deferred`] instead to later load the files by sending a
+/// [`LoadYarnProjectEvent`].
 ///
-/// Needs to be added after the [`AssetPlugin`] which is usually added as part of the [`DefaultPlugins`].
+/// Needs to be added after the [`AssetPlugin`] which is usually added as part
+/// of the [`DefaultPlugins`].
 ///
 /// ## Example
 ///
@@ -25,18 +49,21 @@ mod yarn_file_source;
 /// App::new()
 ///     .add_plugins(DefaultPlugins)
 ///     // Load all Yarn files from the "assets/dialogue" folder by default.
-///     .add_plugins(YarnSpinnerPlugin::new());
+///     .add_plugins(YarnSpinnerPlugin::manual());
 /// ```
 ///
-/// Note that the above does not work on Wasm or Android, since Bevy cannot query folders on these platforms. See [`YarnSpinnerPlugin::new`] for more information.
+/// Note that the above does not work on Wasm or Android, since Bevy cannot
+/// query folders on these platforms. See [`ManualYarnSpinnerPlugin::new`] for
+/// more information.
 ///
-/// For more information on how this plugin interacts with the rest of the crate, see the crate-level documentation.
+/// For more information on how this plugin interacts with the rest of the
+/// crate, see the crate-level documentation.
 #[derive(Debug)]
 #[cfg_attr(
     not(any(target_arch = "wasm32", target_os = "android")),
     derive(Default)
 )]
-pub struct YarnSpinnerPlugin {
+pub struct ManualYarnSpinnerPlugin {
     project: LoadYarnProjectEvent,
 }
 
@@ -44,16 +71,16 @@ pub struct YarnSpinnerPlugin {
 #[derive(Debug, Default, Clone, Copy, SystemSet, Eq, PartialEq, Hash)]
 pub struct YarnSpinnerSystemSet;
 
-impl YarnSpinnerPlugin {
+impl ManualYarnSpinnerPlugin {
     /// Creates a new plugin that loads Yarn files from the folder "assets/dialogue" when not on Wasm or Android.
     /// Otherwise this panics since Bevy cannot query folders on these platforms.
-    /// Use [`YarnSpinnerPlugin::with_yarn_source`] or [`YarnSpinnerPlugin::with_yarn_sources`] there instead.
+    /// Use [`ManualYarnSpinnerPlugin::with_yarn_source`] or [`ManualYarnSpinnerPlugin::with_yarn_sources`] there instead.
     ///
     /// All Yarn files will be shared across [`DialogueRunner`]s.
     /// If hot reloading is turned on via the \"file_watcher\" feature of Bevy,
     /// these Yarn files will be recompiled if they change during runtime.
     ///
-    /// Calling this is equivalent to calling [`YarnSpinnerPlugin::with_yarn_source`] with a [`YarnFileSource::folder`] of `"dialogue"`.
+    /// Calling this is equivalent to calling [`ManualYarnSpinnerPlugin::with_yarn_source`] with a [`YarnFileSource::folder`] of `"dialogue"`.
     #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
     #[must_use]
     pub fn new() -> Self {
@@ -71,7 +98,7 @@ impl YarnSpinnerPlugin {
     ///
     /// ```rust
     /// use bevy_yarnspinner::prelude::*;
-    /// let plugin = YarnSpinnerPlugin::with_yarn_sources([
+    /// let plugin = ManualYarnSpinnerPlugin::with_yarn_sources([
     ///    YarnFileSource::file("some_dialogue.yarn"),
     ///    YarnFileSource::file("some_other_dialogue.yarn"),
     /// ]);
@@ -100,19 +127,13 @@ impl YarnSpinnerPlugin {
     ///
     /// ```rust
     /// use bevy_yarnspinner::prelude::*;
-    /// let plugin = YarnSpinnerPlugin::with_yarn_source(YarnFileSource::folder("yarn_files"));
+    /// let plugin = ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::folder("yarn_files"));
     /// ```
     #[must_use]
     pub fn with_yarn_source(yarn_file_source: impl Into<YarnFileSource>) -> Self {
         Self {
             project: LoadYarnProjectEvent::with_yarn_source(yarn_file_source),
         }
-    }
-
-    /// Creates a version of the plugin that does not load anything yet and instead waits until you have sent a [`LoadYarnProjectEvent`].
-    #[must_use]
-    pub fn deferred() -> DeferredYarnSpinnerPlugin {
-        DeferredYarnSpinnerPlugin
     }
 
     /// Adds a Yarn file source to the files that will be loaded and compiled.
@@ -155,7 +176,7 @@ impl YarnSpinnerPlugin {
     }
 }
 
-impl Plugin for YarnSpinnerPlugin {
+impl Plugin for ManualYarnSpinnerPlugin {
     fn build(&self, app: &mut App) {
         assert!(
             !self.project.yarn_files.is_empty(),
@@ -164,7 +185,7 @@ impl Plugin for YarnSpinnerPlugin {
         If you really want to load no Yarn files right now and do that later, use `YarnSpinnerPlugin::deferred()` instead.\
         If you wanted to load from the default directory instead, use `YarnSpinnerPlugin::default()`."
         );
-        app.add_plugins(Self::deferred())
+        app.add_plugins(DeferredYarnSpinnerPlugin)
             .world_mut()
             .write_message(self.project.clone());
     }
@@ -172,8 +193,10 @@ impl Plugin for YarnSpinnerPlugin {
 
 /// The deferred version of [`YarnSpinnerPlugin`]. Created by [`YarnSpinnerPlugin::deferred`].
 /// Will not load any Yarn files until a [`LoadYarnProjectEvent`] is sent.
-#[derive(Debug)]
-#[non_exhaustive]
+///
+/// This plugin is also added by [`ManualYarnSpinnerPlugin`] and
+/// [`ProjectYarnSpinnerPlugin`]. Don't add it twice!
+#[derive(Debug, Default)]
 pub struct DeferredYarnSpinnerPlugin;
 
 impl Plugin for DeferredYarnSpinnerPlugin {

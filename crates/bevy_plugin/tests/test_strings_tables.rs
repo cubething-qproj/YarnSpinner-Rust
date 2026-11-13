@@ -12,7 +12,7 @@ fn loads_yarn_assets() {
     let mut app = App::new();
 
     app.setup_default_plugins().add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
             .with_localizations(None),
     );
 
@@ -33,7 +33,7 @@ fn panics_on_localization_without_line_ids_in_production() {
     let mut app = App::new();
 
     app.setup_default_plugins().add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
             .with_localizations(Localizations {
                 base_localization: "en-US".into(),
                 translations: vec!["de-CH".into()],
@@ -54,7 +54,7 @@ fn generates_line_ids() -> anyhow::Result<()> {
     let mut app = App::new();
 
     app.setup_default_plugins_for_path(dir.path()).add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
             .with_localizations(Localizations {
                 base_localization: "en-US".into(),
                 translations: vec!["de-CH".into()],
@@ -103,7 +103,7 @@ fn generates_strings_file() -> anyhow::Result<()> {
     let mut app = App::new();
 
     app.setup_default_plugins_for_path(dir.path()).add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines.yarn"))
             .with_localizations(Localizations {
                 base_localization: "en-US".into(),
                 translations: vec!["de-CH".into()],
@@ -162,7 +162,7 @@ fn appends_to_pre_existing_strings_file() -> anyhow::Result<()> {
     let mut app = App::new();
 
     app.setup_default_plugins_for_path(dir.path()).add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("options.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("options.yarn"))
             .with_localizations(Localizations {
                 base_localization: "en-US".into(),
                 translations: vec!["de-CH".into()],
@@ -223,7 +223,7 @@ fn replaces_entries_in_strings_file() -> anyhow::Result<()> {
     let mut app = App::new();
 
     app.setup_default_plugins_for_path(dir.path()).add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines_with_ids.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines_with_ids.yarn"))
             .with_localizations(Localizations {
                 base_localization: "en-US".into(),
                 translations: vec!["de-CH".into()],
@@ -297,7 +297,7 @@ fn does_not_panic_on_missing_language_when_not_selected() {
     let mut app = App::new();
 
     app.setup_default_plugins().add_plugins(
-        YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines_with_ids.yarn"))
+        ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("lines_with_ids.yarn"))
             .with_localizations(Localizations {
                 base_localization: "en-US".into(),
                 translations: vec!["fr-FR".into()],

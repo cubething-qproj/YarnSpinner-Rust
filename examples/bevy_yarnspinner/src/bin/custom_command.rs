@@ -7,7 +7,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins,
-        YarnSpinnerPlugin::new(),
+        ManualYarnSpinnerPlugin::new(),
         ExampleYarnSpinnerDialogueViewPlugin::new(),
     ))
     .add_systems(Startup, setup_camera)

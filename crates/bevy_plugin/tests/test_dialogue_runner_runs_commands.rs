@@ -122,7 +122,7 @@ impl CommandAppExt for App {
                 });
         let mut dialogue_runner = self
             .setup_default_plugins()
-            .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
+            .add_plugins(ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
                 "commands.yarn",
             )))
             .add_plugins(AssertionPlugin)
@@ -140,7 +140,7 @@ impl CommandAppExt for App {
 
     fn setup_dialogue_runner_for_wait(&mut self) -> Mut<'_, DialogueRunner> {
         self.setup_default_plugins()
-            .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
+            .add_plugins(ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
                 "wait.yarn",
             )))
             .add_plugins(AssertionPlugin)

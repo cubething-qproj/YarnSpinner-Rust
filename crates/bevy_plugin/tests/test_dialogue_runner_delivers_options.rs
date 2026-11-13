@@ -210,7 +210,7 @@ trait OptionTestAppExt {
 impl OptionTestAppExt for App {
     fn setup_dialogue_runner(&mut self) -> Mut<'_, DialogueRunner> {
         self.setup_default_plugins()
-            .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
+            .add_plugins(ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
                 "options.yarn",
             )))
             .add_plugins(AssertionPlugin)
@@ -219,7 +219,7 @@ impl OptionTestAppExt for App {
 
     fn setup_dialogue_runner_in_dev_mode(&mut self) -> Mut<'_, DialogueRunner> {
         self.add_plugins(
-            YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("options.yarn"))
+            ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file("options.yarn"))
                 .with_localizations(Localizations {
                     base_localization: "en-US".into(),
                     translations: vec!["de-CH".into()],

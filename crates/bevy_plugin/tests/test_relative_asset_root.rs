@@ -11,7 +11,7 @@ fn loads_folder_with_relative_asset_root() {
     unsafe { std::env::set_var("BEVY_ASSET_ROOT", "./") };
     let mut app = App::new();
     app.setup_default_plugins_for_path("assets")
-        .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::folder(
+        .add_plugins(ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::folder(
             "folder",
         )));
 

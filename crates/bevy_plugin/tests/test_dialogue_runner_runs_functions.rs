@@ -54,7 +54,7 @@ impl FunctionAppExt for App {
 
         let mut dialogue_runner = self
             .setup_default_plugins()
-            .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
+            .add_plugins(ManualYarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
                 "functions.yarn",
             )))
             .dialogue_runner_mut();

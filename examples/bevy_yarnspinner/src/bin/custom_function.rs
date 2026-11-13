@@ -7,7 +7,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins,
-        YarnSpinnerPlugin::new(),
+        ManualYarnSpinnerPlugin::new(),
         ExampleYarnSpinnerDialogueViewPlugin::new(),
     ))
     .insert_resource(Counter(42))
