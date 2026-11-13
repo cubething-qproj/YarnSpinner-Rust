@@ -203,6 +203,7 @@ impl Project {
     /// excluding those that are specified by `exclude_files`.
     pub fn source_files(&self) -> Vec<PathBuf> {
         let Some(root) = self.search_directory() else {
+            error!("you shouldn't be seeing this");
             return Vec::new();
         };
 
@@ -236,5 +237,10 @@ impl Project {
         let source_matcher = self.build_source_globset();
         let exclude_matcher = self.build_exclude_globset();
         source_matcher.is_match(&full_path) && !exclude_matcher.is_match(&full_path)
+    }
+
+    /// Checks a path relative to the project's root. Does not check that the root itself exists.
+    pub fn is_matching_path_relative<P: AsRef<Path>>(&self, path: P) -> bool {
+        self.build_source_globset().is_match(&path) && !self.build_exclude_globset().is_match(&path)
     }
 }

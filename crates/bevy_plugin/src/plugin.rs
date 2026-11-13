@@ -252,39 +252,39 @@ pub(crate) fn watch_yarnproject_load(
     }
 
     let file = file_assets.get(source).unwrap();
-    info!("{file:#?}");
-    let yarn_files = file
-        .source_files()
-        .iter()
-        .cloned()
-        .map(|path| YarnFileSource::File(path))
-        .collect();
-    info!("{yarn_files:?}");
-    let base_localization = Localization::with_language(&file.base_language);
-    let translations = file
-        .localisation
-        .iter()
-        .map(|(str, info)| {
-            let mut loc = Localization::with_language(str);
-            if let Some(ref assets) = info.assets {
-                loc = loc.with_assets_sub_folder(assets);
-            }
-            if let Some(ref strings) = info.strings {
-                loc = loc.with_strings_file(strings);
-            }
-            loc
-        })
-        .collect();
-    let localizations = Localizations {
-        base_localization,
-        translations,
-    };
+    // let base_localization = Localization::with_language(&file.project.base_language);
+    // let translations = file
+    //     .project
+    //     .localisation
+    //     .iter()
+    //     .map(|(str, info)| {
+    //         let mut loc = Localization::with_language(str);
+    //         if let Some(ref assets) = info.assets {
+    //             loc = loc.with_assets_sub_folder(assets);
+    //         }
+    //         if let Some(ref strings) = info.strings {
+    //             loc = loc.with_strings_file(strings);
+    //         }
+    //         loc
+    //     })
+    //     .collect();
+    // let localizations = Localizations {
+    //     base_localization,
+    //     translations,
+    // };
     commands.write_message(LoadYarnProjectEvent {
-        yarn_files,
-        localizations: Some(localizations),
+        yarn_files: file
+            .files
+            .iter()
+            .map(|h| YarnFileSource::Handle(h.clone()))
+            .collect(),
+        // TODO: Enabling this fails because we need to generate the line numbers.
+        // This will come with ysc support.
+        localizations: None, //Some(localizations),
         // TEMP: Set to None. This will eventually be replace with ysc's external metadata files.
         development_file_generation: DevelopmentFileGeneration::None,
     });
+    commands.insert_resource(AllYarnProjectsLoaded);
 }
 
 /// The deferred version of [`YarnSpinnerPlugin`]. Created by [`YarnSpinnerPlugin::deferred`].

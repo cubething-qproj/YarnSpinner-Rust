@@ -1,18 +1,37 @@
+use std::path::{Path, PathBuf};
+
 use crate::prelude::*;
 use bevy::{
-    asset::{AssetLoader, LoadContext, io::Reader},
+    asset::{
+        AssetLoader, AssetPath, LoadContext,
+        io::{ErasedAssetReader, Reader, embedded::GetAssetServer},
+    },
+    platform::collections::HashSet,
     prelude::*,
+    tasks::futures_lite::StreamExt,
 };
 use yarnspinner::compiler::Project;
 
 /// A .yarnproject file.
-#[derive(Debug, Clone, PartialEq, Reflect, Asset, Serialize, Deserialize, Deref, DerefMut)]
-#[reflect(Debug, PartialEq, Serialize, Deserialize)]
-pub struct YarnProjectFile(pub(crate) Project);
+#[derive(Debug, Clone, PartialEq, Reflect, Asset)]
+#[reflect(Debug, PartialEq)]
+pub struct YarnProjectFile {
+    pub(crate) project: Project,
+    #[dependency]
+    pub(crate) files: HashSet<Handle<YarnFile>>,
+}
 
-#[doc = "[AssetLoader] for a [Project]."]
-#[derive(Debug, Default, TypePath)]
-pub struct YarnProjectFileLoader;
+#[derive(TypePath)]
+pub(crate) struct YarnProjectFileLoader {
+    asset_server: AssetServer,
+}
+impl FromWorld for YarnProjectFileLoader {
+    fn from_world(world: &mut World) -> Self {
+        Self {
+            asset_server: world.get_asset_server().clone(),
+        }
+    }
+}
 
 impl AssetLoader for YarnProjectFileLoader {
     type Asset = YarnProjectFile;
@@ -26,14 +45,60 @@ impl AssetLoader for YarnProjectFileLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let file: Project = serde_json::from_slice(&bytes)?;
-        let path = load_context.path().path();
-        let file = file.with_path(path.to_path_buf());
-        Ok(YarnProjectFile(file))
+        let project: Project = serde_json::from_slice(&bytes)?;
+        let asset_path = load_context.path().clone();
+        let project_dir = asset_path
+            .path()
+            .parent()
+            .unwrap_or(Path::new(""))
+            .to_path_buf();
+        let source = self
+            .asset_server
+            .get_source(asset_path.source().clone_owned())?;
+
+        let mut found = Vec::new();
+        walk(source.reader(), &project_dir, &mut found).await?;
+
+        let files = found
+            .into_iter()
+            .filter(|p| {
+                p.strip_prefix(&project_dir)
+                    .is_ok_and(|rel| project.is_matching_path_relative(rel))
+            })
+            .map(|p| {
+                let path =
+                    AssetPath::from_path_buf(p).with_source(asset_path.source().clone_owned());
+                load_context.load::<YarnFile>(path)
+            })
+            .collect();
+
+        Ok(YarnProjectFile {
+            project: project.with_path(asset_path.path().to_path_buf()),
+            files,
+        })
     }
     fn extensions(&self) -> &[&str] {
         &["yarnproject"]
     }
+}
+
+async fn walk(
+    reader: &dyn ErasedAssetReader,
+    dir: &Path,
+    out: &mut Vec<PathBuf>,
+) -> Result<(), Error> {
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let mut entries = reader.read_directory(&dir).await?;
+        while let Some(path) = entries.next().await {
+            if reader.is_directory(&path).await? {
+                stack.push(path);
+            } else {
+                out.push(path);
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn plugin(app: &mut App) {
