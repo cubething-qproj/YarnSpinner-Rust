@@ -5,8 +5,10 @@ use bevy::asset::io::file::FileAssetReader;
 use bevy::prelude::*;
 use std::path::PathBuf;
 pub use yarn_file_source::YarnFileSource;
+pub use yarn_project_source::YarnProjectSource;
 
 mod yarn_file_source;
+mod yarn_project_source;
 
 /// The plugin that provides all Yarn Spinner functionality. This is split into
 /// three APIs: [`ManualYarnSpinnerPlugin`], [`ProjectYarnSpinnerPlugin`], and
@@ -19,6 +21,10 @@ impl YarnSpinnerPlugin {
     /// rather than using a `.yarnproject` file.
     pub fn manual() -> ManualYarnSpinnerPlugin {
         ManualYarnSpinnerPlugin::default()
+    }
+    /// Use this API to load yarn files from a `.yarnproject` file.
+    pub fn from_yarnproject(source: impl Into<YarnProjectSource>) -> ProjectYarnSpinnerPlugin {
+        ProjectYarnSpinnerPlugin::new(source.into())
     }
     /// Use this API when you do not know ahead of time where the yarn spinner
     /// files will be. This plugin is always added. In order to load yarn files,
@@ -189,6 +195,94 @@ impl Plugin for ManualYarnSpinnerPlugin {
             .world_mut()
             .write_message(self.project.clone());
     }
+}
+
+#[derive(Resource)]
+pub struct AllYarnProjectsLoaded;
+
+// A bit of a misnomer for now but that will be fixed on multiple source support.
+#[derive(Resource)]
+pub struct YarnProjectHandles(pub(crate) Handle<YarnProjectFile>);
+
+/// This plugin loads in yarn projects as specified in `.yarnproject` files.
+/// This will translate the loaded file into a [`YarnProject`] [`Resource`].
+/// We currently only support loading a single yarn project.
+// TODO: in other implementations, projects corresponded with a `DialogueRunner`
+// That would take some refactoring -- currently this plugin only supports
+// a single yarn project per app.
+#[derive(Debug)]
+pub struct ProjectYarnSpinnerPlugin {
+    source: YarnProjectSource,
+}
+impl ProjectYarnSpinnerPlugin {
+    /// Create a new [`ProjectYarnSpinnerPlugin`] from a [`YarnProjectSource`].
+    // When we support multiple, this will either become Default() with an empty
+    // check, or a HashSet of sources. I prefer safety by construction, so a
+    // HashSet would be ideal here.
+    pub fn new(source: YarnProjectSource) -> Self {
+        Self { source }
+    }
+}
+impl Plugin for ProjectYarnSpinnerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(DeferredYarnSpinnerPlugin).add_systems(
+            Update,
+            watch_yarnproject_load.run_if(not(resource_exists::<AllYarnProjectsLoaded>)),
+        );
+        // must come after DeferredYarnSpinnerPlugin::register_asset_root
+        {
+            let world = app.world();
+            let asset_server = world.resource::<AssetServer>();
+            let asset_root = world.resource::<AssetRoot>();
+            let handles = YarnProjectHandles(self.source.load(&asset_server, &asset_root));
+            app.insert_resource(handles);
+        }
+    }
+}
+
+pub(crate) fn watch_yarnproject_load(
+    mut commands: Commands,
+    handles: Res<YarnProjectHandles>,
+    file_assets: Res<Assets<YarnProjectFile>>,
+    asset_server: Res<AssetServer>,
+) {
+    let source = handles.0.id();
+    if !asset_server.is_loaded_with_dependencies(source) {
+        return;
+    }
+
+    let file = file_assets.get(source).unwrap();
+    let yarn_files = file
+        .source_files()
+        .iter()
+        .cloned()
+        .map(|path| YarnFileSource::File(path))
+        .collect();
+    let base_localization = Localization::with_language(&file.base_language);
+    let translations = file
+        .localisation
+        .iter()
+        .map(|(str, info)| {
+            let mut loc = Localization::with_language(str);
+            if let Some(ref assets) = info.assets {
+                loc = loc.with_assets_sub_folder(assets);
+            }
+            if let Some(ref strings) = info.strings {
+                loc = loc.with_strings_file(strings);
+            }
+            loc
+        })
+        .collect();
+    let localizations = Localizations {
+        base_localization,
+        translations,
+    };
+    commands.write_message(LoadYarnProjectEvent {
+        yarn_files,
+        localizations: Some(localizations),
+        // TEMP: Set to None. This will eventually be replace with ysc's external metadata files.
+        development_file_generation: DevelopmentFileGeneration::None,
+    });
 }
 
 /// The deferred version of [`YarnSpinnerPlugin`]. Created by [`YarnSpinnerPlugin::deferred`].

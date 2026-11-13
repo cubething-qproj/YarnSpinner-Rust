@@ -142,7 +142,10 @@ pub mod prelude {
         dialogue_runner::{DialogueOption, DialogueRunner, DialogueRunnerBuilder, LocalizedLine},
         line_provider::{AssetProvider, LineAssets, TextProvider},
         localization::{Localization, Localizations},
-        plugin::{ManualYarnSpinnerPlugin, YarnFileSource, YarnSpinnerPlugin, YarnSpinnerSystemSet},
+        plugin::{
+            ManualYarnSpinnerPlugin, ProjectYarnSpinnerPlugin, YarnFileSource, YarnProjectSource,
+            YarnSpinnerPlugin, YarnSpinnerSystemSet,
+        },
         project::YarnProject,
     };
     pub(crate) use crate::{localization::StringsFile, utils::*};
