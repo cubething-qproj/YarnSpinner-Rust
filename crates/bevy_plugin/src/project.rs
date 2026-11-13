@@ -20,6 +20,9 @@ pub(crate) fn project_plugin(app: &mut App) {
 pub(crate) struct CompilationSystemSet;
 
 /// The compiled Yarn project built from the Yarn files passed to the [`YarnSpinnerPlugin`], or, in the deferred loading case, the Yarn files passed to the [`LoadYarnProjectEvent`].
+///
+/// Not to be confused with [`YarnProjectFile`], which corresponds to the `.yarnproject` file.
+///
 /// This [`Resource`](bevy::prelude::Resource) is inserted into the world automatically for you once all files have been loaded and compiled. You can react to this by configuring a system like this:
 /// ```rust
 /// # use bevy::prelude::*;
